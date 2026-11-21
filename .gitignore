@@ -1,2 +1,8 @@
-.env
+# Spotify OAuth tokens
 .cache
+.cache-*
+*.token
+token.json
+
+# Environment variables
+.env
