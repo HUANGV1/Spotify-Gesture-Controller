@@ -2,58 +2,39 @@ import cv2
 import mediapipe as mp
 import time
 
-# Mediapipe tasks api
+# send hands mediapipe information
+class HandTracker:
+    def __init__(self):
+        # Mediapipe tasks api
+        BaseOptions=mp.tasks.BaseOptions
+        HandLandMarker=mp.tasks.vision.HandLandmarker
+        HandLandMarkerOptions=mp.tasks.vision.HandLandmarkerOptions
+        RunningMode=mp.tasks.vision.RunningMode
 
-BaseOptions=mp.tasks.BaseOptions
-HandLandMarker=mp.tasks.vision.HandLandmarker
-HandLandMarkerOptions=mp.tasks.vision.HandLandmarkerOptions
-RunningMode=mp.tasks.vision.RunningMode
+        # Configure hand landmarker
+        options = HandLandMarkerOptions(
+            base_options=BaseOptions(
+                model_asset_path="hand_landmarker.task"
+            ),
+            running_mode=RunningMode.VIDEO,
+            num_hands=2,
+            min_hand_detection_confidence=0.7,
+            min_hand_presence_confidence=0.7,
+            min_tracking_confidence=0.7,
+        )
 
-# Hand skeleton connections (21 landmarks)
-CONNECTIONS = [
-    (0, 1), (1, 2), (2, 3), (3, 4),
-    (0, 5), (5, 6), (6, 7), (7, 8),
-    (5, 9), (9, 10), (10, 11), (11, 12),
-    (9, 13), (13, 14), (14, 15), (15, 16),
-    (13, 17), (17, 18), (18, 19), (19, 20),
-    (0, 17)
-]
+        self.landmarker=HandLandMarker.create_from_options(options)
 
-# Configure hand landmarker
-options = HandLandMarkerOptions(
-    base_options=BaseOptions(
-        model_asset_path="hand_landmarker.task"
-    ),
-    running_mode=RunningMode.VIDEO,
-    num_hands=2,
-    min_hand_detection_confidence=0.7,
-    min_hand_presence_confidence=0.7,
-    min_tracking_confidence=0.7,
-)
+        self.cap=cv2.VideoCapture(0)
 
-# Start webcap
+        if not self.cap.isOpened(): raise RuntimeError("Could not open webcam")
 
-print("Starting webcam...", flush=True)
-cap=cv2.VideoCapture(0)
 
-if not cap.isOpened(): raise RuntimeError("Could not open webcam")
+    def get_hands(self):
 
-print("Camera opened:", cap.isOpened(), flush=True)
+        ret, frame=self.cap.read()
 
-# main loop
-with HandLandMarker.create_from_options(options) as landmarker:
-
-    print("Landmarker initialized", flush=True)
-
-    while True:
-        print("Reading frame...", flush=True)
-        ret, frame=cap.read()
-
-        if not ret: break
-
-        print("Frame received:", ret, flush=True)
-
-        # frame=cv2.flip(frame, 1)
+        if not ret: return None, None
 
         height, width, _ = frame.shape
 
@@ -66,66 +47,25 @@ with HandLandMarker.create_from_options(options) as landmarker:
             data=rgb_frame,
         )
 
-        print("Running inference...", flush=True)
-
         # process frame with timestamp
         timestamp_ms=time.monotonic_ns() // 1_000_000
 
-        results=landmarker.detect_for_video(
+        results=self.landmarker.detect_for_video(
             mp_image,
             timestamp_ms,
         )
 
-        # draw detected hands
-        for hand_index, hand_landmarks in enumerate(results.hand_landmarks):
-            # get handedness
-            hand_label=results.handedness[hand_index][0].category_name
+        # map handedness to landmarks
+        hands={}
 
-            # convert normalized coordinates to pixels
-            points=[]
+        for i, landmarks in enumerate(results.hand_landmarks):
+            label=results.handedness[i][0].category_name
+            hands[label]=landmarks
 
-            for landmark in hand_landmarks:
-                x=int(landmark.x*width)
-                y=int(landmark.y*height)
-                points.append((x,y))
+        return hands, frame
 
-            # draw connections
-            for start, end in CONNECTIONS:
-                cv2.line(
-                    frame,
-                    points[start],
-                    points[end],
-                    (0, 255, 0),
-                    2
-                )
 
-            # draw landmarks
-            for point in points:
-                cv2.circle(
-                    frame,
-                    point,
-                    5,
-                    (0,0,255),
-                    -1
-                )
-
-            # display hand label
-            cv2.putText(
-                frame,
-                hand_label,
-                points[0],
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.8,
-                (255,0,0),
-                2
-            )
-
-        print("Inference complete", flush=True)
-
-        cv2.imshow("Mediapipe Hand Tracking", frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-cap.release()
-cv2.destroyAllWindows()
+    def close(self):
+        self.cap.release()
+        self.landmarker.close()
+        cv2.destroyAllWindows()
