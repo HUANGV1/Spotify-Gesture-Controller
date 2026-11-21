@@ -59,10 +59,47 @@ class HandTracker:
         hands={}
 
         for i, landmarks in enumerate(results.hand_landmarks):
+            self.draw_landmarks(frame, landmarks)
             label=results.handedness[i][0].category_name
+            if label=="Right":
+                self.draw_pinch_line(frame, landmarks)
             hands[label]=landmarks
 
         return hands, frame
+
+    def draw_landmarks(self, frame, landmarks):
+        height, width, _ = frame.shape
+
+        points = [
+            (int(landmark.x * width), int(landmark.y * height))
+            for landmark in landmarks
+        ]
+
+        connections = [
+            (0, 1), (1, 2), (2, 3), (3, 4),
+            (0, 5), (5, 6), (6, 7), (7, 8),
+            (5, 9), (9, 10), (10, 11), (11, 12),
+            (9, 13), (13, 14), (14, 15), (15, 16),
+            (13, 17), (17, 18), (18, 19), (19, 20),
+            (0, 17)
+        ]
+
+        for start, end in connections:
+            cv2.line(frame, points[start], points[end], (0, 255, 0), 2)
+
+        for point in points:
+            cv2.circle(frame, point, 5, (0, 0, 255), -1)
+
+    def draw_pinch_line(self, frame, landmarks):
+        height, width, _ = frame.shape
+
+        thumb = (int(landmarks[4].x * width),
+                int(landmarks[4].y * height))
+
+        index = (int(landmarks[8].x * width),
+                int(landmarks[8].y * height))
+
+        cv2.line(frame, thumb, index, (255, 0, 0), 2)
 
 
     def close(self):
