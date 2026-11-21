@@ -14,7 +14,7 @@ class HandTracker:
         # Configure hand landmarker
         options = HandLandMarkerOptions(
             base_options=BaseOptions(
-                model_asset_path="hand_landmarker.task"
+                model_asset_path="video_capture/hand_landmarker.task"
             ),
             running_mode=RunningMode.VIDEO,
             num_hands=2,

@@ -109,4 +109,6 @@ class GestureRecognizer:
         if not any(fingers.values()):
             return "FIST"
 
+        return "UNKNOWN"
+
         
