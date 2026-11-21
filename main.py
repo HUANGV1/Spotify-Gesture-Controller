@@ -3,6 +3,7 @@ import time
 from video_capture.hand_tracking import HandTracker
 from video_capture.gesture_recognition import GestureRecognizer
 from spotify.spotify_controller import SpotifyController
+from spotify.spotify_display import SpotifyDisplay
 
 # for cooldown
 COOLDOWN=1.0 # sec
@@ -21,6 +22,8 @@ last_volume_update_time=0
 tracker = HandTracker()
 recognizer = GestureRecognizer()
 spotify = SpotifyController()
+display = SpotifyDisplay(spotify)
+display.start()
 
 try:
 
@@ -110,13 +113,15 @@ try:
                 (10, 100),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.7,
-                (255, 255, 0),
+                (0, 0, 255),
                 2
             )
 
+        display.draw(frame)
         cv2.imshow("Spotify Gesture Controller", frame)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 finally:
+    display.stop()
     tracker.close()
