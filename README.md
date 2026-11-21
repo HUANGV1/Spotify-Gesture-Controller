@@ -2,8 +2,6 @@
 
 Control Spotify with hand gestures. 
 
-This was just a learning repo for me.
-
 ## Setup
 
 ```bash
@@ -28,4 +26,5 @@ python main.py
 | Open palm | One finger | Skip |
 | Open palm | Two fingers | Previous |
 | Fist | Pinch | Volume |
-For fun lol + fully human-coded (no vibecoding)
+
+For fun lol + fully human-coded (minimal vibecoding)
