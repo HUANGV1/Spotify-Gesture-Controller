@@ -14,9 +14,15 @@ try:
         hands, frame=tracker.get_hands()
 
         for hand_lable, landmarks in hands.items():
-            fingers=recognizer.get_finger_states(landmarks)
+            gesture=recognizer.recognize_gesture(landmarks)
+            pinch_distance=recognizer.get_normalized_pinch_distance(landmarks)
 
-            print(hand_lable, fingers)
+            print(
+                hand_lable,
+                gesture,
+                "Pinch Distance: ",
+                round(pinch_distance, 2)
+            )
 
         if frame is None: break
 

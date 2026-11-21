@@ -57,7 +57,56 @@ class GestureRecognizer:
 
     # calc distance between thumb and index
     def get_pinch_distance(self, landmarks):
-        pass
+        thumb_tip=landmarks[4]
+        index_tip=landmarks[8]
+
+        dx = thumb_tip.x - index_tip.x
+        dy = thumb_tip.y - index_tip.y
+
+        distance = math.sqrt(dx**2 + dy**2)
+
+        return distance
+
+    def get_normalized_pinch_distance(self, landmarks):
+        pinch_distance=self.get_pinch_distance(landmarks)
+
+        # wrist to middle finger MCP
+        wrist=landmarks[0]
+        middle_mcp=landmarks[9]
+
+        hand_size = math.sqrt(
+            (wrist.x - middle_mcp.x)**2 +
+            (wrist.y - middle_mcp.y)**2
+        )
+
+        if hand_size==0: return 0
+
+        return pinch_distance/hand_size
 
     def recognize_gesture(self, landmarks):
-        pass
+        fingers=self.get_finger_states(landmarks)
+
+        # extract individual finger states
+        thumb=fingers["thumb"]
+        index = fingers["index"]
+        middle = fingers["middle"]
+        ring = fingers["ring"]
+        pinky = fingers["pinky"]
+
+        # open palm
+        if all(fingers.values()):
+            return "OPEN_PALM"
+
+        # index only
+        if index and not thumb and not middle and not ring and not pinky:
+            return "ONE"
+        
+        # index and middle
+        if index and middle and not thumb and not ring and not pinky:
+            return "TWO"
+        
+        # closed fist
+        if not any(fingers.values()):
+            return "FIST"
+
+        
